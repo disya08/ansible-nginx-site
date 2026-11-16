@@ -1,0 +1,45 @@
+---
+- name: Настройка кастомного сайта на Nginx
+  hosts: web
+  become: true
+
+  vars:
+    app_name: "New Amber Site"
+    root_dir: "/var/www/amber_site"
+    nginx_port: 8090
+
+  tasks:
+    - name: Установка Nginx (если не установлен)
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Создание каталога сайта
+      ansible.builtin.file:
+        path: "{{ root_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Формирование главной страницы сайта
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: "{{ root_dir }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Формирование конфигурации Nginx
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Перечитывание конфигурации Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
